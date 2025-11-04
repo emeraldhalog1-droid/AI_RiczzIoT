@@ -1,0 +1,92 @@
+{
+  "owner": "RiczzIoT",
+  "version": "2.0.0",
+  "description": "Configuration for RiczzIoT E-Learning Story Maker AI Models",
+  
+  "gguf": {
+    "enabled": false,
+    "modelPath": "./models/your-model.gguf",
+    "contextSize": 2048,
+    "temperature": 0.7,
+    "maxTokens": 512,
+    "topP": 0.9,
+    "topK": 40,
+    "repeatPenalty": 1.1,
+    "gpuLayers": 0
+  },
+  
+  "hybrid": {
+    "preferredEngine": "auto",
+    "fallbackEnabled": true
+  },
+  
+  "recommendedModels": [
+    {
+      "name": "TinyLlama 1.1B Chat",
+      "file": "tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf",
+      "size": "637MB",
+      "url": "https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF",
+      "description": "Lightweight model, perfect for basic story generation. Low resource requirements.",
+      "requirements": "2GB RAM minimum",
+      "recommended": true
+    },
+    {
+      "name": "Phi-2",
+      "file": "phi-2.Q4_K_M.gguf",
+      "size": "1.6GB",
+      "url": "https://huggingface.co/TheBloke/phi-2-GGUF",
+      "description": "Compact but powerful model with excellent story generation capabilities.",
+      "requirements": "4GB RAM minimum",
+      "recommended": true
+    },
+    {
+      "name": "Mistral 7B Instruct",
+      "file": "mistral-7b-instruct-v0.2.Q4_K_M.gguf",
+      "size": "4.1GB",
+      "url": "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF",
+      "description": "High-quality model with excellent creative writing and bilingual capabilities.",
+      "requirements": "8GB RAM minimum",
+      "recommended": true
+    },
+    {
+      "name": "LLaMA 2 7B Chat",
+      "file": "llama-2-7b-chat.Q4_K_M.gguf",
+      "size": "3.8GB",
+      "url": "https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF",
+      "description": "Versatile model with strong story generation and instruction following.",
+      "requirements": "8GB RAM minimum",
+      "recommended": false
+    }
+  ],
+  
+  "setup": {
+    "modelsDirectory": "./models",
+    "instructions": [
+      "1. Create a 'models' directory in the project root",
+      "2. Download a .gguf model file from the recommended models list",
+      "3. Place the .gguf file in the models directory",
+      "4. Update the 'modelPath' in this config file",
+      "5. Set 'enabled' to true",
+      "6. Install node-llama-cpp: npm install node-llama-cpp",
+      "7. Restart the server"
+    ]
+  },
+  
+  "languages": {
+    "english": {
+      "enabled": true,
+      "genres": ["adventure", "educational", "moral"]
+    },
+    "tagalog": {
+      "enabled": true,
+      "genres": ["adventure", "educational", "moral"]
+    }
+  },
+  
+  "generation": {
+    "defaultGenre": "adventure",
+    "defaultLanguage": "english",
+    "defaultDifficulty": "beginner",
+    "maxVariations": 5
+  }
+}

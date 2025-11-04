@@ -1,14 +1,16 @@
 /**
  * RiczzIoT E-Learning Story Maker Server
- * Local server for AI-powered story generation
+ * Local server for AI-powered story generation with GGUF model support
  * Author: RiczzIoT
+ * Version: 2.0.0
  */
 
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
-const StoryAI = require('./ai-model/StoryAI');
+const fs = require('fs');
+const HybridStoryAI = require('./ai-model/HybridStoryAI');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,7 +20,25 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-const storyAI = new StoryAI();
+// Load configuration
+let config = {};
+try {
+  const configPath = path.join(__dirname, 'model-config.json');
+  if (fs.existsSync(configPath)) {
+    config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    console.log('✓ Configuration loaded from model-config.json');
+  }
+} catch (error) {
+  console.warn('⚠ Could not load model-config.json, using defaults');
+}
+
+// Initialize Hybrid AI (combines GGUF and rule-based)
+const storyAI = new HybridStoryAI(config);
+
+// Initialize the AI system
+(async () => {
+  await storyAI.initialize();
+})();
 
 console.log(`
 ╔═══════════════════════════════════════════════════════════╗
@@ -34,7 +54,7 @@ app.get('/', (req, res) => {
 
 app.get('/api/info', (req, res) => {
   try {
-    const info = storyAI.getModelInfo();
+    const info = storyAI.getSystemInfo();
     res.json({
       success: true,
       data: info
@@ -47,22 +67,79 @@ app.get('/api/info', (req, res) => {
   }
 });
 
-app.post('/api/generate', (req, res) => {
+app.get('/api/model/status', (req, res) => {
+  try {
+    const status = storyAI.getStatus();
+    res.json({
+      success: true,
+      data: status
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+app.post('/api/model/engine', (req, res) => {
+  try {
+    const { engine } = req.body;
+    
+    if (!engine) {
+      return res.status(400).json({
+        success: false,
+        error: 'Engine parameter required (auto, gguf, or rule-based)'
+      });
+    }
+    
+    const result = storyAI.setPreferredEngine(engine);
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+app.get('/api/model/recommended', (req, res) => {
+  try {
+    const GGUFModelLoader = require('./ai-model/GGUFModelLoader');
+    const models = GGUFModelLoader.getRecommendedModels();
+    res.json({
+      success: true,
+      data: models
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+app.post('/api/generate', async (req, res) => {
   try {
     const {
       genre = 'adventure',
       language = 'english',
       difficulty = 'beginner',
       topic = null,
-      customElements = {}
+      customElements = {},
+      engine = 'auto'
     } = req.body;
 
-    const story = storyAI.generateStory({
+    const story = await storyAI.generateStory({
       genre,
       language,
       difficulty,
       topic,
-      customElements
+      customElements,
+      engine
     });
 
     res.json({
@@ -77,7 +154,7 @@ app.post('/api/generate', (req, res) => {
   }
 });
 
-app.post('/api/generate-variations', (req, res) => {
+app.post('/api/generate-variations', async (req, res) => {
   try {
     const {
       genre = 'adventure',
@@ -85,15 +162,17 @@ app.post('/api/generate-variations', (req, res) => {
       difficulty = 'beginner',
       topic = null,
       customElements = {},
-      count = 3
+      count = 3,
+      engine = 'auto'
     } = req.body;
 
-    const variations = storyAI.generateVariations({
+    const variations = await storyAI.generateVariations({
       genre,
       language,
       difficulty,
       topic,
-      customElements
+      customElements,
+      engine
     }, count);
 
     res.json({
@@ -192,8 +271,10 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
+  const status = storyAI.getStatus();
   console.log(`✓ Server is running on http://localhost:${PORT}`);
-  console.log(`✓ AI Model: ${storyAI.getModelInfo().name}`);
+  console.log(`✓ AI Engine: ${status.currentEngine.toUpperCase()}`);
+  console.log(`✓ GGUF Model: ${status.ggufAvailable ? 'Available' : 'Not Available (using rule-based)'}`);
   console.log(`✓ Supported Languages: ${storyAI.supportedLanguages.join(', ')}`);
   console.log(`\nAPI Endpoints:`);
   console.log(`  GET  /api/info - Get model information`);
